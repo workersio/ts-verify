@@ -1,5 +1,0 @@
-(set-option :produce-models true)
-(declare-const s String)
-(assert (= (str.++ s "world") "helloworld"))
-(check-sat)
-(get-model)
