@@ -43,7 +43,7 @@ describe('verification', () => {
     expect(message.loc).to.be.deep.eq({
       file: '',
       start: { line: 3, column: 20 },
-      end: { line: 3, column: 30 }
+      end: { line: 3, column: 32 }
     });
   });
 });
@@ -125,17 +125,17 @@ describe('trace', () => {
     expect(vc.steps()).to.be.eq(19);
     expect(vc.pc()).to.be.deep.eq({
       file: '',
-      start: { line: 3, column: 25 },
-      end: { line: 3, column: 30 }
+      start: { line: 3, column: 27 },
+      end: { line: 3, column: 32 }
     });
     expect(vc.iteration()).to.be.eq(0);
     expect(vc.callstack()).to.be.deep.eq([
       [
-        '<program> (:3:25)',
+        '<program> (:3:27)',
         {
           file: '',
-          start: { line: 3, column: 25 },
-          end: { line: 3, column: 30 }
+          start: { line: 3, column: 27 },
+          end: { line: 3, column: 32 }
         },
         0
       ]
