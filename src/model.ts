@@ -213,18 +213,62 @@ export class Model {
 
   constructor(smt: SMTOutput) {
     // assumes smt starts with "sat", so remove "sat"
-    const smt2 = smt.slice(3, smt.length);
-    if (smt2.trim().startsWith('(error')) this.modelError(smt2.trim());
+    const smt2 = smt.slice(3, smt.length).trim();
+    if (smt2.startsWith('(error')) this.modelError(smt2);
+    
+    // Modern Z3 output format: the model is just a sequence of definitions
+    // We need to wrap it in (model ...) for compatibility
+    let modelContent = smt2;
+    
+    // If the output doesn't start with (model, we need to wrap it
+    if (!smt2.startsWith('(model')) {
+      // Find all define-fun statements
+      const lines = smt2.split('\n');
+      const definitions: string[] = [];
+      let currentDef = '';
+      let parenCount = 0;
+      
+      for (const line of lines) {
+        if (line.trim().startsWith(';;') || line.trim() === '') continue;
+        
+        currentDef += line + '\n';
+        
+        // Count parentheses to find complete S-expressions
+        for (const char of line) {
+          if (char === '(') parenCount++;
+          else if (char === ')') parenCount--;
+        }
+        
+        if (parenCount === 0 && currentDef.trim()) {
+          if (currentDef.trim().startsWith('(define-fun')) {
+            definitions.push(currentDef.trim());
+          }
+          currentDef = '';
+        }
+      }
+      
+      if (definitions.length > 0) {
+        modelContent = `(model ${definitions.join(' ')})`;
+      } else {
+        modelContent = '(model)';
+      }
+    }
+    
     let data: SExpr;
     try {
-      data = parseSExpr(smt2.trim());
+      data = parseSExpr(modelContent);
     } catch (e) {
       throw this.modelError(e instanceof Error ? e.message : String(e));
     }
+    
     if (typeof data === 'string') throw this.modelError(data);
-    if (data.length < 2) throw this.modelError(smt);
+    if (data.length < 1) throw this.modelError(smt);
     if (data[0] !== 'model') throw this.modelError(smt);
-    data.slice(1).forEach((s) => this.parseDefinition(s));
+    
+    // Process each definition
+    if (data.length > 1) {
+      data.slice(1).forEach((s) => this.parseDefinition(s));
+    }
   }
 
   public valueOf(name: FreeVar): JSVal {
